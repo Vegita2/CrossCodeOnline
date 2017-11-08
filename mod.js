@@ -49,34 +49,6 @@ document.body.addEventListener('modsLoaded', () => {
 class PlayerContainer {
 	constructor() {
 		this.players = {};
-		this.settings = {
-			"name": "multiplayeree",
-			"characterName": "main.lea",
-			"analyzable": {
-				"text": {
-					"en_US": "Multiplayer",
-					"de_DE": "Multiplayer",
-					"fr_FR": "Multiplayer",
-					"zh_CN": "Multiplayer",
-					"ja_JP": "ja_JP",
-					"langUid": 213,
-					"ko_KR": ""
-				},
-				"active": ""
-			},
-			"npcStates": [
-				{
-					"reactType": "FIXED_FACE",
-					"face": "SOUTH",
-					"action": [],
-					"hidden": false,
-					"condition": "      ",
-					"config": "normal",
-					"event": {}
-				}
-			],
-			"mapId": 1337
-		};
 	}
 	
 	update() {
@@ -228,9 +200,13 @@ class WebSocketClient {
 class AnimationContainer {
 	constructor() {
 		this.images = {};
+		this.hasAll = false;
 	}
 	
 	update() {
+		if (this.hasAll) {
+			return;
+		}
 		let player = cc.ig.playerInstance();
 		if (!player) {
 			return;
@@ -240,6 +216,14 @@ class AnimationContainer {
 		if (!this.images[sheetName]) {
 			this.images[sheetName] = sheet;
 			console.log(sheetName);
+			
+			let size = 0, key;
+			for (key in this.images) {
+				if (this.images.hasOwnProperty(key)) size++;
+			}
+			if (size >= 2) {
+				this.hasAll = true;
+			}
 		}
 	}
 }
