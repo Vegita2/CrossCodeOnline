@@ -15,17 +15,26 @@ if (!CONFIG.playerName) {
 document.body.addEventListener('modsLoaded', () => {
 	console.log('multiplayer test');
 	
-	
+	let server = new WebSocketServer();
+	server.setupUi();
 	let players = new PlayerContainer();
 	let anims = new AnimationContainer();
-	let connection = new WebsocketConnection(CONFIG.url, data => {
+	let client = new WebSocketClient(data => {
 		players.setPlayer(data, anims);
 	});
+	
+	global.ccOnline = {
+		config: CONFIG,
+		players: players,
+		anims: anims,
+		server: server,
+		client: client
+	};
 	
 	
 	simplify.registerUpdate(() => {
 		anims.update();
-		connection.update();
+		client.update();
 		players.update();
 	});
 	
@@ -149,29 +158,45 @@ class PlayerContainer {
 	}
 }
 
-class WebsocketConnection {
+class WebSocketClient {
 	
-	constructor(url, onmessage) {
-		this.updateInterval = 1;
-		this.webSocket = new WebSocket(url);
+	constructor(onmessage) {
 		this.onmessage = onmessage;
+	}
+	
+	connect(playerName, url, onopen, onerror) {
+		CONFIG.playerName = playerName;
+		
+		this.updateInterval = 1;
+		if (this.webSocket && this.webSocket.readyState === WebSocket.OPEN) {
+			this.webSocket.close();
+			this.webSocket = null;
+		}
+		
+		this.webSocket = new WebSocket(url);
 		
 		this.webSocket.onmessage = event => {
-			onmessage(JSON.parse(event.data));
+			this.onmessage(JSON.parse(event.data));
 		};
 		this.webSocket.onopen = event => {
 			console.log("connection opened");
+			if (onopen) {
+				onopen(event);
+			}
 		};
 		this.webSocket.onerror = event => {
 			console.log("Error!");
 			console.log(event);
+			if (onerror) {
+				onerror(event);
+			}
 		};
 	}
 	
 	update() {
 		let player = cc.ig.playerInstance();
 		let mapName = simplify.getActiveMapName();
-		if (!player || !mapName) {
+		if (!player || !mapName || !this.webSocket) {
 			return;
 		}
 		
@@ -216,6 +241,35 @@ class AnimationContainer {
 			this.images[sheetName] = sheet;
 			console.log(sheetName);
 		}
+	}
+}
+
+class WebSocketServer {
+	setupUi() {
+		let gui = require('nw.gui');
+		let mainWin = gui.Window.get();
+		let newWin = gui.Window.open('../assets/mods/multiplayer/webSocket.html', {
+			width: 700,
+			height: 500
+		});
+		
+		// mainWin.on('close', () => {
+		// 	gui.App.quit();
+		// })
+	}
+	
+	startServer(port) {
+		let Server = require('../assets/mods/multiplayer/simplewebsocket.min.js');
+		console.log(Server);
+		console.log('start server');
+		if (this.server) {
+			this.server.close();
+			this.server = null;
+		}
+		this.server = new Server({port: port});
+		this.server.on('connection', function (socket) {
+			socket.on('data', data => console.log(data));
+		})
 	}
 }
 
