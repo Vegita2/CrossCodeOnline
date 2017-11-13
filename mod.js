@@ -203,7 +203,7 @@ class WebSocketClient {
 		const _instance = this
 		this.processMessage = function(user,message) {
 			if(message.toLowerCase().indexOf("/") === 0) {
-				processCommand(message)
+				Helper.processCommand(message)
 			}
 			else if(message.length){
 				_instance.message = message;
