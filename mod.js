@@ -28,15 +28,14 @@ document.body.addEventListener('modsLoaded', () => {
 		}
 		players.setPlayer(data, anims);
 	});
-	let msg1 = new MessageBox(document.body)
-	msg1.init()
 	global.ccOnline = {
 		config: CONFIG,
 		players: players,
 		anims: anims,
 		server: server,
 		client: client,
-		playerLocation: {}
+		playerLocation: {},
+		messageHandler: new MessageBox(document.body)
 	};
 	
 	
@@ -54,62 +53,62 @@ document.body.addEventListener('modsLoaded', () => {
 	};
 });
 class MessageBox {
-	let cmd, messageBox,commandLine;
-	let _instance = this
 	constructor(Window) {
-		cmd = document.createElement("div");
-		cmd.style.position = "absolute"
-		cmd.onkeypress = function(event) {
+		let _instance = this
+		this.cmd = document.createElement("div");
+		this.cmd.style.position = "absolute"
+		this.cmd.onkeypress = function(event) {
 			if(event.ctrlKey && 
 			   String.fromCharCode(event.which + 96).toLowerCase() === 'e') {
 				_instance.hide()   
 			   }
 		}
-		Window.appendChild(cmd)
+		Window.appendChild(this.cmd)
 		//What the user will see
-		messageBox = document.createElement("div")
+		this.messageBox = document.createElement("div")
 		//Set up the design
-		messageBox.style.width = "30vw";
-		messageBox.style.height = "30vw";
-		messageBox.style["overflow-y"] = "auto";
-		messageBox.style["overflow-x"] = "hidden";
-		cmd.appendChild(messageBox)
+		this.messageBox.style.width = "30vw";
+		this.messageBox.style.height = "30vw";
+		this.messageBox.style["overflow-y"] = "auto";
+		this.messageBox.style["overflow-x"] = "hidden";
+		this.cmd.appendChild(this.messageBox)
 		//What the user will be typing from
-		commandLine = document.createElement("input")
-		commandLine.type = "text"
+		this.commandLine = document.createElement("input")
+		this.commandLine.type = "text"
 		
-		commandLine.onkeypress = function(event) {
+		this.commandLine.onkeypress = function(event) {
 			if(event.keyCode === 13 && this.value) {
-				global.ccOnline.client.processMessage("You", this.value)
+				if(global.ccOnline.client.processMessage("You", this.value))
+					global.ccOnline.client.setMessage(this.value)
 				this.value = null
 			}
 		}
-		cmd.appendChild(commandLine)
+		this.cmd.appendChild(this.commandLine)
 	}
 	show() {
-		cmd.hidden = false
+		this.cmd.hidden = false
 	}
 	hide() {
-		cmd.hidden = true
+		this.cmd.hidden = true
 		this.blur()
 	}
 	focus() {
 		this.show()
-		commandLine.focus()
+		this.commandLine.focus()
 	}
 	blur() {
-		commandLine.value = null
-		commandLine.blur()
+		this.commandLine.value = null
+		this.commandLine.blur()
 	}
 	say(user, message) {
 		var messageElement = document.createElement("span")
 		messageElement.innerHTML = user + ":" + message + "<br />"
-		messageBox.appendChild(messageElement)
+		this.messageBox.appendChild(messageElement)
 	}
 	error(message) {
 		var messageElement = document.createElement("span")
 		messageElement.innerHTML = message + "<br />"
-		messageBox.appendChild(messageElement)
+		this.messageBox.appendChild(messageElement)
 	}
 }
 
@@ -200,21 +199,22 @@ class PlayerContainer {
 class WebSocketClient {
 	
 	constructor(onmessage) {
-		const _instance = this
 		this.processMessage = function(user,message) {
 			if(message.toLowerCase().indexOf("/") === 0) {
 				Helper.processCommand(message)
+				return false;
 			}
 			else if(message.length){
-				_instance.message = message;
-				let playerName = global.ccOnline.config.playerName
-				msg1.say(playerName, message)	
-				_instance.message = ""
+				global.ccOnline.messageHandler.say(user, message)
 			}
+			return true;
+		}
+		this.setMessage = function(newMessage) {
+			this.message = newMessage
 		}
 		document.addEventListener("keyup", function() {
 			if(String.fromCharCode(event.keyCode).toLowerCase() == 'm') {
-				msg1.focus()	
+				global.ccOnline.messageHandler.focus()	
 			}
 		})
 		this.onmessage = onmessage;
@@ -237,7 +237,7 @@ class WebSocketClient {
 		this.webSocket.onopen = event => {
 			console.log("connection opened");
 			this.webSocket.send(JSON.stringify({
-				playerName : CONFIG.playerName,
+				name : CONFIG.playerName,
 				message : "> has connected"
 			}))
 			if (onopen) {
@@ -257,13 +257,13 @@ class WebSocketClient {
 		let player = cc.ig.playerInstance();
 		let mapName = simplify.getActiveMapName();
 		if (!player || !mapName || !this.webSocket) {
-			msg1.hide()
+			global.ccOnline.messageHandler.hide()
 			return;
 		}
 		
 		if (this.webSocket.readyState !== WebSocket.OPEN) {
 			console.error('websocket not opened!');
-			msg1.hide()
+			global.ccOnline.messageHandler.hide()
 			return;
 		}
 		
@@ -274,7 +274,7 @@ class WebSocketClient {
 		};
 		if(this.message) {
 			data['message'] = this.message
-			this.message = ""
+			this.message = null
 		}
 		data.anim = Object.assign({}, player[cc.ig.varNames.animation]);
 		let cpy = Object.assign({}, data.anim[VAR_NAMES.anims][0]);
@@ -366,7 +366,7 @@ class Helper {
 				map : map
 			}).start()
 		} else {
-			msg1.error('Could not find "' + player + '". Maybe they disconnected?')
+			global.ccOnline.messageHandler.error('Could not find "' + player + '". Maybe they disconnected?')
 		}
 	}
 	static setPos(entity, pos) {
