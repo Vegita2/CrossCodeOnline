@@ -256,26 +256,37 @@ class WebSocketClient {
 	update() {
 		let player = cc.ig.playerInstance();
 		let mapName = simplify.getActiveMapName();
-		if (!player || !mapName || !this.webSocket) {
-			global.ccOnline.messageHandler.hide()
+		
+		if(!this.webSocket) {
 			return;
 		}
-		
 		if (this.webSocket.readyState !== WebSocket.OPEN) {
 			console.error('websocket not opened!');
 			global.ccOnline.messageHandler.hide()
 			return;
+		} else if(this.message) {
+			this.webSocket.send(JSON.stringify({
+				message : this.message,
+				name : CONFIG.playerName
+			}))
+			this.message = null
 		}
-		
+		if (!player || !mapName) {
+			return;
+		}
+		//Hacky fix to determine whether in menu...
+		if(!cc.sc.stats.get("player").playtime) {
+			Helper.disableCommand()
+			return;
+		}
+		if(!Helper.canCommand)
+			Helper.enableCommand()
 		let data = {
 			map: mapName,
 			name: CONFIG.playerName,
 			pos: Helper.getPos(player)
 		};
-		if(this.message) {
-			data['message'] = this.message
-			this.message = null
-		}
+		
 		data.anim = Object.assign({}, player[cc.ig.varNames.animation]);
 		let cpy = Object.assign({}, data.anim[VAR_NAMES.anims][0]);
 		cpy.sheet = cpy.sheet[VAR_NAMES.image].path;
@@ -350,9 +361,21 @@ class WebSocketServer {
 		})
 	}
 }
-
+function Help (){
+	return Helper.canCommand
+}
 class Helper {
+	static disableCommand() {
+		Helper.canCommand = false;
+	}
+	static enableCommand() {
+		Helper.canCommand = true;
+	}
 	static processCommand(message){
+		if(!Helper.canCommand) {
+			global.ccOnline.messageHandler.error("Commands are disabled.")
+			return false	
+		}
 		var command = message.split(" ")[0].replace("/", "")
 		var args = message.split(" ").splice(1)
 		if(command === "t") {
