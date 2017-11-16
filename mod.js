@@ -75,14 +75,15 @@ class MessageBox {
 		//What the user will be typing from
 		this.commandLine = document.createElement("input")
 		this.commandLine.type = "text"
-		
 		this.commandLine.onkeypress = function(event) {
 			if(event.keyCode === 13 && this.value) {
 				if(global.ccOnline.client.processMessage("You", this.value))
 					global.ccOnline.client.setMessage(this.value)
+				_instance.messageBox.scrollTop = _instance.messageBox.scrollHeight;
 				this.value = null
 			}
 		}
+		this.cmd.hidden = true
 		this.cmd.appendChild(this.commandLine)
 	}
 	show() {
