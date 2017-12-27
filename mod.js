@@ -1,12 +1,7 @@
 'use strict';
 
 const CONFIG = require('../assets/mods/multiplayer/config.js');
-const VAR_NAMES = {
-	anims: 'Nh',
-	image: 'bd',
-	tint: 'j9',
-	empty: 'aU'
-};
+
 
 if (!CONFIG.playerName) {
 	CONFIG.playerName = '' + Math.round((Math.random() * Math.pow(10, 10)));
@@ -149,11 +144,11 @@ class PlayerContainer {
 		entity[cc.ig.varNames.currentAnimation] = data.currentAnim;
 		entity[cc.ig.varNames.animationState] = data.animState;
 		
-		let anim = data.anim[VAR_NAMES.anims][0];
+		let anim = data.anim[cc.ig.varNames.anims][0];
 		anim.sheet = animContainer.images[anim.sheet];
 		if (anim.sheet) {
-			Object.assign(entity[cc.ig.varNames.animation][VAR_NAMES.anims][0], data.anim[VAR_NAMES.anims][0]);
-			delete data.anim[VAR_NAMES.anims];
+			Object.assign(entity[cc.ig.varNames.animation][cc.ig.varNames.anims][0], data.anim[cc.ig.varNames.anims][0]);
+			delete data.anim[cc.ig.varNames.anims];
 			
 			// if (data.anim[varNames.tint].length > 0){
 			// 	Object.assign(entity[cc.ig.varNames.animation][varNames.tint][0].color, data.anim[varNames.tint][0].color);
@@ -289,12 +284,12 @@ class WebSocketClient {
 		};
 		
 		data.anim = Object.assign({}, player[cc.ig.varNames.animation]);
-		let cpy = Object.assign({}, data.anim[VAR_NAMES.anims][0]);
-		cpy.sheet = cpy.sheet[VAR_NAMES.image].path;
-		data.anim[VAR_NAMES.anims] = [cpy];
+		let cpy = Object.assign({}, data.anim[cc.ig.varNames.anims][0]);
+		cpy.sheet = cpy.sheet[cc.ig.varNames.image].path;
+		data.anim[cc.ig.varNames.anims] = [cpy];
 		
-		data.anim[VAR_NAMES.tint] = [];
-		data.anim[VAR_NAMES.empty] = [];
+		data.anim[cc.ig.varNames.tint] = [];
+		data.anim[cc.ig.varNames.empty] = [];
 		
 		// data.currentAnim = player[cc.ig.varNames.currentAnimation];
 		// data.animState = player[cc.ig.varNames.animationState];
@@ -317,8 +312,8 @@ class AnimationContainer {
 		if (!player) {
 			return;
 		}
-		let sheet = player[cc.ig.varNames.animation][VAR_NAMES.anims][0].sheet;
-		let sheetName = sheet[VAR_NAMES.image].path;
+		let sheet = player[cc.ig.varNames.animation][cc.ig.varNames.anims][0].sheet;
+		let sheetName = sheet[cc.ig.varNames.image].path;
 		if (!this.images[sheetName]) {
 			this.images[sheetName] = sheet;
 			console.log(sheetName);
