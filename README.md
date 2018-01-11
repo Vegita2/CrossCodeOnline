@@ -1,6 +1,10 @@
 # CrossCodeOnline
 ![multiplayer.gif](https://user-images.githubusercontent.com/9483499/34839445-e72b001a-f701-11e7-9ee2-c07a2a93918c.gif)
 
+## Features
+- Syncs position and animations of Lea between all clients
+- WIP chat, open with `m`, close with `ctrl + e`
+
 ## Install guide
 Install CCLoader  
 https://github.com/CCDirectLink/CCLoader/wiki/Setup
